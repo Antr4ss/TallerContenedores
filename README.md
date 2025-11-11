@@ -1,140 +1,163 @@
-# Manual de usuario - Despliegue de aula-service
+# Manual de usuario - Despliegue de la plataforma (microservicios)
 
-Este manual describe, paso a paso y sin información personal, cómo descargar las imágenes Docker necesarias, crear las instancias (máquinas/servidores) y desplegar la aplicación aula-service para que cualquier usuario con conocimientos básicos pueda realizar el proceso.
+Este manual describe, paso a paso y sin información personal, cómo descargar las imágenes Docker necesarias, crear las instancias (máquinas/servidores) y desplegar la plataforma compuesta por los microservicios (incluyendo aula-service) usando docker-compose. Está pensado para que un usuario con conocimientos básicos siga las instrucciones y logre desplegar la aplicación completa.
 
 ## Resumen
-- Aplicación: aula-service (servicio Spring Boot).
-- Componentes mínimos: base de datos PostgreSQL y servicio aula-service.
-- Puerto de la aplicación: 8082 (ajustar si su configuración usa otro).
-- No contiene datos de autores.
+- Plataforma: conjunto de microservicios (ej.: gateway, config, discovery, aula-service, otros microservicios que conforman la solución).
+- Componentes mínimos: base de datos PostgreSQL y los microservicios.
+- Orquestación recomendada: docker-compose (evita ejecutar contenedores individualmente).
+- Puerto público de ejemplo para la aplicación: 8082 (ajustar según configuración de cada servicio).
+- El documento no contiene datos de autores.
 
 ## Requisitos previos
-- Acceso a una máquina con Linux (local o en la nube) con permisos para instalar software y abrir puertos.
-- Acceso a Internet desde la máquina para descargar imágenes.
-- Docker instalado en la(s) máquina(s) donde desplegará los contenedores.
-- (Opcional) Cuenta en Docker Hub si desea tirar imágenes privadas o subir imágenes propias.
+- Máquina Linux (local o en la nube) con permisos de administrador para instalar software y abrir puertos.
+- Conexión a Internet desde la máquina para descargar imágenes.
+- Docker y Docker Compose (plugin moderno) instalados en la máquina donde desplegará.
+- (Opcional) Cuenta en Docker Hub o en un registro privado para acceder a las imágenes.
 
-## Preparar la instancia (máquina/VM)
-1. Crear la VM en el proveedor de su elección (proveedor genérico):
-   - Sistema recomendado: Ubuntu 22.04 LTS.
-   - Reserva de recurso: 1 vCPU, 2 GB RAM mínimo (ajustar según carga).
-   - Abrir puertos en el firewall y en el proveedor:
+## Preparar la instancia (VM o servidor)
+1. Crear la VM en el proveedor que elija:
+   - Recomendado: Ubuntu 22.04 LTS.
+   - Recursos mínimos por entorno de pruebas: 2 vCPU, 4 GB RAM (ajustar según número de microservicios y carga).
+   - Abrir puertos necesarios (según servicios expuestos), por ejemplo:
      - 22 (SSH)
-     - 8082 (aplicación)
-     - 5432 (PostgreSQL) — abrir solo si necesita acceso remoto a la DB.
-2. Conectarse por SSH a la VM y ejecutar las instalaciones:
-   - Actualizar paquetes:
-     sudo apt update && sudo apt upgrade -y
-   - Instalar Docker (método recomendado):
-     curl -fsSL https://get.docker.com -o get-docker.sh
-     sudo sh get-docker.sh
-   - Instalar docker-compose (plugin moderno) si lo necesita:
-     sudo apt install -y docker-compose-plugin
-   - Añadir su usuario al grupo docker (cerrar y abrir sesión):
-     sudo usermod -aG docker $USER
+     - 8082 (puerto ejemplo del gateway/API)
+     - 5432 (PostgreSQL) — solo si necesita acceso remoto directo a la DB.
+2. Conectarse por SSH y preparar la máquina:
+```bash
+sudo apt update && sudo apt upgrade -y
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo apt install -y docker-compose-plugin
+sudo usermod -aG docker $USER
+# cierre y vuelva a iniciar sesión para aplicar el grupo docker
+```
 
-## Descargar las imágenes Docker
-En la VM (o en la máquina donde desplegará):
-1. Imágenes públicas necesarias:
-   - PostgreSQL oficial:
-     docker pull postgres:15
-   - Imagen de la aplicación (ejemplo de nombre; sustituya por la que corresponda):
-     docker pull TU_DOCKERHUB_USER/aula-service:latest
-   - Si la imagen no existe en un registry público y tiene el código fuente, puede construir localmente (en la máquina donde está el Dockerfile) y, si desea, etiquetar y subirla a Docker Hub:
-     docker build -t TU_DOCKERHUB_USER/aula-service:latest .
-     docker login
-     docker push TU_DOCKERHUB_USER/aula-service:latest
+## Descargar imágenes Docker (opcional)
+- Si las imágenes están en un registro público:
+```bash
+docker pull postgres:15
+docker pull ORGANIZACION/gateway:latest
+docker pull ORGANIZACION/aula-service:latest
+docker pull ORGANIZACION/otro-servicio:latest
+```
+- Si dispone del código y del Dockerfile localmente, puede construir la imagen y subirla al registry:
+```bash
+# construir localmente (ejemplo)
+docker build -t ORGANIZACION/aula-service:latest .
+# iniciar sesión en Docker Hub/registry
+docker login
+# subir la imagen al registry
+docker push ORGANIZACION/aula-service:latest
+```
+Nota: reemplace ORGANIZACION y nombres de servicios por los valores reales del registro. No incluya información personal en las etiquetas o metadatos.
 
-Nota: reemplace TU_DOCKERHUB_USER por el nombre de repositorio que corresponda. No incluya información personal en los metadatos.
-
-## Despliegue (opción 1: contenedores individuales con docker run)
-1. Crear la base de datos PostgreSQL:
-   docker run -d --name aula-db \
-     -e POSTGRES_DB=aulas \
-     -e POSTGRES_USER=aula_user \
-     -e POSTGRES_PASSWORD=aula_pass \
-     -v aula-postgres-data:/var/lib/postgresql/data \
-     -p 5432:5432 \
-     postgres:15
-2. Desplegar el servicio aula-service (ajuste variables según su configuración):
-   docker run -d --name aula-service \
-     -e SPRING_DATASOURCE_URL=jdbc:postgresql://aula-db:5432/aulas \
-     -e SPRING_DATASOURCE_USERNAME=aula_user \
-     -e SPRING_DATASOURCE_PASSWORD=aula_pass \
-     -p 8082:8082 \
-     --link aula-db:aula-db \
-     TU_DOCKERHUB_USER/aula-service:latest
-
-Nota: si ejecuta ambos contenedores en la misma máquina, puede usar el hostname del contenedor (aula-db). Si la DB está en otra máquina, sustituya el host por la IP o DNS correspondiente.
-
-## Despliegue (opción 2: docker-compose — recomendado para despliegue reproducible)
-1. Crear un archivo docker-compose.yml con el siguiente ejemplo (en la misma carpeta):
+## Despliegue (recomendado: docker-compose)
+1. Cree un archivo docker-compose.yml en la máquina de despliegue. Ejemplo genérico para varios microservicios:
 ```yaml
 version: "3.8"
 services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: aulas
-      POSTGRES_USER: aula_user
-      POSTGRES_PASSWORD: aula_pass
+      POSTGRES_DB: plataforma
+      POSTGRES_USER: platform_user
+      POSTGRES_PASSWORD: strong_password
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - aula-net
+      - plataforma-net
 
-  aula-service:
-    image: TU_DOCKERHUB_USER/aula-service:latest
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/aulas
-      SPRING_DATASOURCE_USERNAME: aula_user
-      SPRING_DATASOURCE_PASSWORD: aula_pass
+  gateway:
+    image: ORGANIZACION/gateway:latest
     ports:
-      - "8082:8082"
+      - "8082:8082"   # puerto público del gateway/API
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
     depends_on:
       - db
     networks:
-      - aula-net
+      - plataforma-net
+
+  aula-service:
+    image: ORGANIZACION/aula-service:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/plataforma
+      SPRING_DATASOURCE_USERNAME: platform_user
+      SPRING_DATASOURCE_PASSWORD: strong_password
+    depends_on:
+      - db
+    networks:
+      - plataforma-net
+
+  otro-servicio:
+    image: ORGANIZACION/otro-servicio:latest
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/plataforma
+      SPRING_DATASOURCE_USERNAME: platform_user
+      SPRING_DATASOURCE_PASSWORD: strong_password
+    depends_on:
+      - db
+    networks:
+      - plataforma-net
 
 volumes:
   postgres-data:
 
 networks:
-  aula-net:
+  plataforma-net:
 ```
-2. Lanzar la pila:
-   docker compose up -d
-3. Ver logs:
-   docker compose logs -f aula-service
+2. Reemplace los nombres de imagen (ORGANIZACION/...) y variables por los valores reales de su entorno.
+3. Levante la pila:
+```bash
+docker compose up -d
+```
+4. Verifique estado y logs:
+```bash
+docker compose ps
+docker compose logs -f gateway
+docker compose logs -f aula-service
+```
 
 ## Comprobaciones y verificación
-- Ver contenedores en ejecución:
-  docker ps
-- Revisar logs del servicio:
-  docker logs -f aula-service
-- Probar endpoint básico (desde máquina local o mediante curl en la VM):
-  curl http://<IP_O_HOST>:8082/aulas
+- Listar contenedores activos:
+```bash
+docker ps
+```
+- Ver logs de un servicio:
+```bash
+docker logs -f <container_name_or_id>
+```
+- Probar un endpoint desde otra máquina o localmente:
+```bash
+curl http://<IP_O_HOST>:8082/health   # ajuste la ruta según su gateway/servicio
+curl http://<IP_O_HOST>:8082/aulas    # ejemplo de endpoint de aula-service
+```
 
 ## Actualizaciones y rollback
-- Para actualizar a una nueva versión:
-  1) Parar contenedores actuales: docker compose down
-  2) Descargar nueva imagen: docker pull TU_DOCKERHUB_USER/aula-service:versión
-  3) Actualizar el docker-compose.yml con el nuevo tag y volver a levantar: docker compose up -d
-- Para rollback: usar el tag anterior de la imagen y repetir el proceso (pull del tag anterior y docker compose up -d).
+- Para actualizar a una nueva versión de imagen:
+  1. Parar la pila: docker compose down
+  2. Descargar el nuevo tag: docker pull ORGANIZACION/aula-service:VERSION
+  3. Actualizar docker-compose.yml con el nuevo tag y levantar: docker compose up -d
+- Para rollback: use el tag anterior en docker-compose.yml y repita el proceso.
 
 ## Seguridad y buenas prácticas
-- No exponga PostgreSQL a Internet si no es necesario; utilice redes internas o VPN.
-- Use contraseñas robustas y, preferiblemente, variables de entorno o secrets para producción.
-- Configure backups para los volúmenes de la base de datos.
-- Use certificados TLS y reglas de firewall apropiadas en producción.
+- No exponga PostgreSQL directamente a Internet; use redes privadas o VPN.
+- Utilice contraseñas robustas y gestione secretos con mecanismos seguros (secrets de Docker, Vault, variables de entorno gestionadas).
+- Configure backups periódicos para los volúmenes de la base de datos.
+- En producción, habilite TLS/HTTPS en el gateway y aplique políticas de firewall.
+- Limite accesos SSH y use claves públicas/privadas.
 
 ## Generar el manual en PDF y subir al Aula Virtual
-1. Para generar un PDF desde este documento (opciones):
-   - Usar Pandoc:
-     sudo apt install -y pandoc
-     pandoc README.md -o Manual_Despliegue_aula-service.pdf
-   - O usar la opción "Imprimir a PDF" en su editor (VS Code, navegador, etc.).
-2. Subir el PDF resultante al sistema del Aula Virtual mediante la interfaz de carga del curso o actividad.
+1. Para generar un PDF desde este documento:
+```bash
+# opción con Pandoc
+sudo apt install -y pandoc
+pandoc README.md -o Manual_Despliegue_Plataforma.pdf
+```
+2. Suba el PDF generado al espacio del Aula Virtual mediante la interfaz de carga del curso o actividad.
 
-## Conclusión
-Siga los pasos en orden: preparar la VM, instalar Docker, descargar imágenes, desplegar (docker run o docker compose) y verificar. El manual evita información personal y es suficiente para que un usuario con conocimientos básicos despliegue la aplicación.
+## Notas finales
+- Este manual es genérico: ajuste nombres de imagen, puertos y variables a su estructura de microservicios.
+- Use docker-compose para un despliegue reproducible y sencillo. Evite exponer servicios innecesarios a Internet.
+- El documento no contiene datos personales ni información que permita inferir autores del taller.
