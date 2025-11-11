@@ -1,34 +1,61 @@
 version: '3.8'
 services:
   db:
-    image: mysql:8
-    container_name: db_dtic
+    image: mysql:8.0
+    container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: dtic
+      MYSQL_DATABASE: prestamosdb
     ports:
       - "3306:3306"
     volumes:
-      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   aula-service:
     build: ./aula-service
+    container_name: aula-service
     ports:
       - "8081:8081"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/prestamosdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+    restart: unless-stopped
 
   prestamo-service:
     build: ./prestamo-service
+    container_name: prestamo-service
     ports:
       - "8082:8082"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/prestamosdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "root"
+    restart: unless-stopped
 
   reporte-service:
     build: ./reporte-service
+    container_name: reporte-service
     ports:
       - "8083:8083"
     depends_on:
-      - aula-service
       - prestamo-service
+    environment:
+      # Feign / client URL (adjust property key used by your FeignClient)
+      PRESTAMO_SERVICE_URL: "http://prestamo-service:8082"
+      prestamo-service.url: "http://prestamo-service:8082"
+    restart: unless-stopped
+
+volumes:
+  db_data:
