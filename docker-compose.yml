@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8
+    container_name: mysql-dtic
+    environment:
+      MYSQL_DATABASE: dtic
+      MYSQL_USER: retdr
+      MYSQL_PASSWORD: Daniel11052003
+      MYSQL_ROOT_PASSWORD: adminroot
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  aula-service:
+    build: ./backend/aula-service
+    container_name: aula-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/dtic?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: retdr
+      SPRING_DATASOURCE_PASSWORD: Daniel11052003
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  prestamo-service:
+    build: ./backend/prestamo-service
+    container_name: prestamo-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/dtic?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: retdr
+      SPRING_DATASOURCE_PASSWORD: Daniel11052003
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Puedes agregar reporte-service igual que los otros microservicios

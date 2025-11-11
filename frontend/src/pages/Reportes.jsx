@@ -1,15 +1,15 @@
-import React from 'react';
-
-const reportesEjemplo = [
-  { titulo: "Préstamos esta semana", valor: 19 },
-  { titulo: "Aula más usada", valor: "Bloque 1 12" },
-  { titulo: "Promedio préstamos diarios", valor: 3 },
-  { titulo: "Día con más actividad", valor: "Jueves" },
-  { titulo: "Porcentaje ocupación", valor: "75%" },
-  { titulo: "Total préstamos este mes", valor: 41 },
-];
+import React, { useEffect, useState } from "react";
+import { getReportes } from "../services/api";
 
 export default function Reportes() {
+  const [reportes, setReportes] = useState([]);
+
+  useEffect(() => {
+    getReportes()
+      .then(setReportes)
+      .catch(() => setReportes([]));
+  }, []);
+
   return (
     <section style={{
       minHeight: "60vh",
@@ -39,7 +39,7 @@ export default function Reportes() {
           justifyContent: "center",
           marginTop: "28px"
         }}>
-          {reportesEjemplo.map((r, idx) => (
+          {reportes.map((r, idx) => (
             <div key={idx} style={{
               background: "#f5fcff",
               padding: "16px 24px",
