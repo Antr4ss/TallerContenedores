@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  db:
+    image: mysql:8
+    container_name: db_dtic
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dtic
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  aula-service:
+    build: ./aula-service
+    ports:
+      - "8081:8081"
+    depends_on:
+      - db
+
+  prestamo-service:
+    build: ./prestamo-service
+    ports:
+      - "8082:8082"
+    depends_on:
+      - db
+
+  reporte-service:
+    build: ./reporte-service
+    ports:
+      - "8083:8083"
+    depends_on:
+      - aula-service
+      - prestamo-service
