@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaUniversity, FaUsers, FaCalendarCheck } from 'react-icons/fa';
+import { FaUniversity, FaDoorOpen, FaUsers, FaCalendarCheck } from 'react-icons/fa';
+import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
@@ -37,7 +38,9 @@ export default function Home() {
           fontSize: "1.10em",
           marginBottom: "20px",
           textAlign: "center"
-        }}>Gestiona los préstamos de salas, consulta tus reportes académicos y descubre la disponibilidad y ocupación de espacios en tiempo real.</p>
+        }}>
+          Gestiona los préstamos de salas, consulta tus reportes académicos y descubre la disponibilidad y ocupación de espacios en tiempo real.
+        </p>
         <div style={{
           display: "flex",
           flexDirection: "row",
@@ -45,28 +48,51 @@ export default function Home() {
           gap: "34px",
           marginTop: "16px"
         }}>
-          <div style={{
-            background: "#e3f2fd",
-            borderRadius: "20px",
-            padding: "18px 14px",
-            width: "120px",
-            boxShadow: "0 1px 5px #3498db22"
-          }}>
-            <FaUsers style={{ color: "#1565c0", fontSize: "1.5em" }}/>
-            <div style={{ fontWeight: 700, color: "#1565c0", marginTop: 8, fontSize: 18 }}>Usuarios</div>
-            <div style={{ color: "#666", fontSize: 14 }}>Solicita tu aula</div>
-          </div>
-          <div style={{
-            background: "#e8f5e9",
-            borderRadius: "20px",
-            padding: "18px 14px",
-            width: "125px",
-            boxShadow: "0 1px 5px #27ae6022"
-          }}>
-            <FaCalendarCheck style={{ color: "#27ae60", fontSize: "1.5em" }}/>
-            <div style={{ fontWeight: 700, color: "#27ae60", marginTop: 8, fontSize: 18 }}>Reportes</div>
-            <div style={{ color: "#666", fontSize: 14 }}>Consulta actividad</div>
-          </div>
+          <Link to="/aulas" style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "#fffbea",
+              borderRadius: "20px",
+              padding: "18px 14px",
+              width: "120px",
+              boxShadow: "0 1px 5px #f1c40f33",
+              transition: "transform 0.15s",
+              cursor: "pointer"
+            }}>
+              <FaDoorOpen style={{ color: "#f1c40f", fontSize: "1.5em" }}/>
+              <div style={{ fontWeight: 700, color: "#f1c40f", marginTop: 8, fontSize: 18 }}>Aulas</div>
+              <div style={{ color: "#666", fontSize: 14 }}>Gestiona aulas</div>
+            </div>
+          </Link>
+          <Link to="/prestamos" style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "#e3f2fd",
+              borderRadius: "20px",
+              padding: "18px 14px",
+              width: "120px",
+              boxShadow: "0 1px 5px #3498db22",
+              transition: "transform 0.15s",
+              cursor: "pointer"
+            }}>
+              <FaUsers style={{ color: "#1565c0", fontSize: "1.5em" }}/>
+              <div style={{ fontWeight: 700, color: "#1565c0", marginTop: 8, fontSize: 18 }}>Préstamos</div>
+              <div style={{ color: "#666", fontSize: 14 }}>Solicita tu aula</div>
+            </div>
+          </Link>
+          <Link to="/reportes" style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "#e8f5e9",
+              borderRadius: "20px",
+              padding: "18px 14px",
+              width: "125px",
+              boxShadow: "0 1px 5px #27ae6022",
+              transition: "transform 0.15s",
+              cursor: "pointer"
+            }}>
+              <FaCalendarCheck style={{ color: "#27ae60", fontSize: "1.5em" }}/>
+              <div style={{ fontWeight: 700, color: "#27ae60", marginTop: 8, fontSize: 18 }}>Reportes</div>
+              <div style={{ color: "#666", fontSize: 14 }}>Consulta actividad</div>
+            </div>
+          </Link>
         </div>
       </div>
     </section>

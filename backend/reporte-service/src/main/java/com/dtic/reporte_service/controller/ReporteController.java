@@ -1,17 +1,22 @@
 package com.dtic.reporte_service.controller;
 
-import org.springframework.web.bind.annotation.*;
-import com.dtic.reporte_service.service.PrestamoClient;
-import com.dtic.reporte_service.models.PrestamoDTO;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.dtic.reporte_service.models.PrestamoDTO;
+import com.dtic.reporte_service.service.PrestamoClient;
 
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/reportes")
-@CrossOrigin
 public class ReporteController {
 
     private final PrestamoClient prestamoClient;

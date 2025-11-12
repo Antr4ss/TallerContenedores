@@ -1,10 +1,20 @@
 package com.dtic.prestamo_service.controller;
 
+import java.util.List;
+import java.util.Optional;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.dtic.prestamo_service.models.Prestamo;
 import com.dtic.prestamo_service.repository.PrestamoRepository;
-import java.util.List;
 
 @RestController
 @RequestMapping("/prestamos")
@@ -29,5 +39,16 @@ public class PrestamoController {
     @GetMapping("/por-programa/{programa}")
     public List<Prestamo> porPrograma(@PathVariable String programa) {
         return prestamoRepository.findByPrograma(programa);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        Optional<Prestamo> prestamo = prestamoRepository.findById(id);
+        if (prestamo.isPresent()) {
+            prestamoRepository.deleteById(id);
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

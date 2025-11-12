@@ -43,4 +43,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
-  # Puedes agregar reporte-service igual que los otros microservicios
+
+  reporte-service:
+    build: ./backend/reporte-service
+    container_name: reporte-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/dtic?serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: retdr
+      SPRING_DATASOURCE_PASSWORD: Daniel11052003
+    ports:
+      - "8083:8083"
+    depends_on:
+      db:
+        condition: service_healthy
+      prestamo-service:
+        condition: service_started
